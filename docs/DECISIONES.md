@@ -224,3 +224,21 @@ clases (enlace de YouTube) y lanzar el pipeline con un botón.
   `materiales/clase/clase.mp4`, y una segunda clase habría reutilizado el vídeo de la
   primera. La fuente original de T1_S01 y la clase ya procesada siguen leyendo de
   `materiales/`.
+
+**D29 · Preparación para Laravel Cloud: nada fuera de la app y nada que dependa del disco.**
+En Cloud solo se despliega la carpeta de la app, el disco es efímero, y la web y el worker
+son máquinas distintas. Por eso:
+- El temario oficial con el que compara el revisor pasa a
+  `resources/syllabus/temario_oficial.md`, configurable con `OFFICIAL_SYLLABUS_PATH`.
+  Antes se leía de `../docs/`, fuera de la app, y todas las revisiones habrían fallado.
+  `docs/TEMARIO_OFICIAL.md` queda como copia de documentación, y un test comprueba que
+  ambas son idénticas byte a byte.
+- El texto de los PDF subidos se guarda en `sources.document_text`, en la base de datos.
+  Antes iba a un `.txt` en disco que el worker no habría visto. El PDF original no se
+  guarda, porque solo hace falta su texto. Un tema subido sin texto produce un error
+  explícito y nunca recurre al material de `materiales/`: generaría contenido de otro tema.
+- `accesopro:user` crea o restablece usuarios del panel. No hay registro público, y el
+  seeder por defecto crea un usuario con contraseña conocida. El comando funciona en la
+  consola no interactiva de Cloud: sin `--password` genera una contraseña segura y la
+  muestra una sola vez.
+- La lista de comprobación del despliegue está en `docs/DESPLIEGUE_CLOUD.md`.

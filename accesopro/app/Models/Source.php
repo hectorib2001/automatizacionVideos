@@ -49,10 +49,10 @@ class Source extends Model
         return $this->meta['video_path'] ?? config('accesopro.class_video_path');
     }
 
-    /** Texto extraído del documento subido (PDF), o null si la fuente usa materiales/. */
-    public function documentTextPath(): ?string
+    /** Texto extraído del PDF subido, o null si la fuente usa materiales/. */
+    public function documentText(): ?string
     {
-        return $this->meta['document_text_path'] ?? null;
+        return $this->document_text !== null && trim($this->document_text) !== '' ? $this->document_text : null;
     }
 
     public function isRunning(): bool

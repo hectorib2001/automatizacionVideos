@@ -221,6 +221,9 @@ de la base de datos; se exportarán a CSV en la Fase 6.)
       que ya hizo su trabajo y sale. También confirma que el refactor a `PipelineRunner` no
       rompió el pipeline real.
 - [ ] Ejecución completa desde cero (base de datos vacía) con un solo disparador
+- [x] **Código preparado para Cloud** (D29): temario oficial dentro de la app, texto de
+      los PDF en la base de datos, comando `accesopro:user`, sección de Cloud en
+      `.env.example`. Lista de comprobación en `docs/DESPLIEGUE_CLOUD.md`.
 - [ ] Deploy en Laravel Cloud (binarios estáticos, worker, límite de gasto). **Worker
       obligatorio** para el botón "Generar" de `/fuentes`: activar la cola gestionada con
       timeout de 3600 s (y `DB_QUEUE_RETRY_AFTER`/`retry_after` por encima). En local basta

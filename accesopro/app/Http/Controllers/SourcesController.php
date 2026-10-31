@@ -10,7 +10,6 @@ use App\Services\Materials\PdfTextExtractor;
 use App\Services\Pipeline\PipelineRunner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -65,22 +64,16 @@ final class SourcesController extends Controller
             return back()->withInput()->withErrors(['document' => $e->getMessage()]);
         }
 
-        $source = new Source(['type' => 'temario', 'code' => $data['code'], 'title' => $data['title']]);
-        $dir = $source->storageDir();
-        File::ensureDirectoryExists($dir);
-
-        $file->move($dir, 'documento.pdf');
-        file_put_contents("{$dir}/documento.txt", $text);
-
-        $source->fill([
+        // Solo se guarda el texto, y en la base de datos: en Laravel Cloud el disco es efímero
+        // y el worker que genera el contenido no ve los archivos de la web (ver D29).
+        $source = Source::create([
+            'type' => 'temario',
+            'code' => $data['code'],
+            'title' => $data['title'],
             'ref' => $file->getClientOriginalName(),
-            'meta' => [
-                'origin' => 'panel',
-                'document_path' => "{$dir}/documento.pdf",
-                'document_text_path' => "{$dir}/documento.txt",
-                'document_chars' => mb_strlen($text),
-            ],
-        ])->save();
+            'document_text' => $text,
+            'meta' => ['origin' => 'panel', 'document_chars' => mb_strlen($text)],
+        ]);
 
         return redirect()->route('sources.index')
             ->with('status', "Tema «{$source->title}» añadido (".number_format(mb_strlen($text), 0, ',', '.').' caracteres de texto).');

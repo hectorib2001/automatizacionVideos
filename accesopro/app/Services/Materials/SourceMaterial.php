@@ -14,7 +14,7 @@ final class SourceMaterial
 {
     public function officialSyllabus(): string
     {
-        return $this->read(base_path('../docs/TEMARIO_OFICIAL.md'));
+        return $this->read(config('accesopro.official_syllabus_path'));
     }
 
     public function accesoProSyllabus(): string
@@ -52,8 +52,8 @@ final class SourceMaterial
      */
     public function ideasContext(Source $source): string
     {
-        if ($path = $source->documentTextPath()) {
-            return "# Documento del tema (fuente principal)\n\n".$this->read($path);
+        if ($text = $this->uploadedText($source)) {
+            return "# Documento del tema (fuente principal)\n\n{$text}";
         }
 
         return "# Estructura del tema en AccesoPro\n\n{$this->accesoProSyllabus()}\n\n"
@@ -64,11 +64,26 @@ final class SourceMaterial
     /** Material del que se escribe cada guion (mismo criterio que ideasContext()). */
     public function scriptContext(Source $source): string
     {
-        if ($path = $source->documentTextPath()) {
-            return "# Documento del tema (fuente de contenido)\n\n".$this->read($path);
+        if ($text = $this->uploadedText($source)) {
+            return "# Documento del tema (fuente de contenido)\n\n{$text}";
         }
 
         return "# Guion de podcast (fuente de contenido)\n\n".$this->podcastTranscript($source->code);
+    }
+
+    /**
+     * Texto del PDF de un tema subido desde el panel, o null si la fuente es de materiales/.
+     * Un tema subido sin texto es un error: nunca debe caer en silencio al material de
+     * materiales/ (generaría contenido de otro tema).
+     */
+    private function uploadedText(Source $source): ?string
+    {
+        if (! $source->isUploaded()) {
+            return null;
+        }
+
+        return $source->documentText()
+            ?? throw new RuntimeException("El tema subido {$source->code} no tiene texto guardado: vuelve a subir el PDF.");
     }
 
     private function read(string $path): string

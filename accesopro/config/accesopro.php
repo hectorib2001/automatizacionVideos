@@ -59,6 +59,11 @@ return [
     // Vive fuera del repositorio de código, en materiales/ (ver .gitignore raíz).
     'materiales_path' => env('MATERIALES_PATH', base_path('../materiales')),
 
+    // Temario oficial (público, DOGV) con el que el revisor compara todo. Vive dentro de la
+    // app para que viaje con el despliegue: docs/TEMARIO_OFICIAL.md es la copia de
+    // documentación y un test comprueba que ambas sean idénticas.
+    'official_syllabus_path' => env('OFFICIAL_SYLLABUS_PATH', resource_path('syllabus/temario_oficial.md')),
+
     // Imagen de marca. Colores y tipografía (Inter) son públicos y van en el repo
     // (resources/brand/fonts); el logo real es de Grupo Mentor y se lee en tiempo de
     // ejecución desde materiales/ (confidencial, nunca se commitea). Si no está disponible

@@ -88,8 +88,9 @@ it('uploads a pdf topic and stores its extracted text for the pipeline', functio
 
     expect($source->isUploaded())->toBeTrue()
         ->and($source->ref)->toBe('tema.pdf')
-        ->and(is_file($source->meta['document_path']))->toBeTrue()
-        ->and(file_get_contents($source->documentTextPath()))->toContain('exponente negativo');
+        ->and($source->documentText())->toContain('exponente negativo')
+        // Nada en disco: en Cloud el worker no vería los archivos de la web.
+        ->and(is_dir($source->storageDir()))->toBeFalse();
 
     // El pipeline usa el texto del PDF, no el material original de materiales/.
     expect(app(SourceMaterial::class)->ideasContext($source))->toContain('Documento del tema', 'exponente negativo')
@@ -171,13 +172,32 @@ it('does not queue a source that is already running', function () {
 it('records the error on the source when the pipeline fails', function () {
     $source = Source::create([
         'type' => 'temario', 'code' => 'TEST_PDF', 'title' => 'Roto',
-        'meta' => ['origin' => 'panel', 'document_text_path' => '/no/existe/documento.txt'],
+        'meta' => ['origin' => 'panel'], // subido, pero sin texto guardado
     ]);
 
     expect(fn () => RunSourcePipeline::dispatchSync($source, 1))->toThrow(RuntimeException::class);
 
     $source->refresh();
     expect($source->run_status)->toBe(Source::RUN_ERROR)
-        ->and($source->run_error)->toContain('No se encontró el material')
+        ->and($source->run_error)->toContain('no tiene texto guardado')
         ->and($source->run_finished_at)->not->toBeNull();
+});
+
+it('never falls back to materiales/ for an uploaded topic without text', function () {
+    $source = Source::create(['type' => 'temario', 'code' => 'T1_S01', 'title' => 'x', 'meta' => ['origin' => 'panel']]);
+
+    expect(fn () => app(SourceMaterial::class)->scriptContext($source))
+        ->toThrow(RuntimeException::class, 'no tiene texto guardado');
+});
+
+it('keeps the official syllabus used by the reviewer identical to the documented copy', function () {
+    $documented = base_path('../docs/TEMARIO_OFICIAL.md');
+
+    if (! is_file($documented)) {
+        $this->markTestSkipped('docs/ no está disponible (p. ej. en un despliegue).');
+    }
+
+    expect(app(SourceMaterial::class)->officialSyllabus())
+        ->toBe(file_get_contents($documented))
+        ->toContain('Bloque 1: Sentido numérico');
 });
