@@ -242,3 +242,17 @@ son máquinas distintas. Por eso:
   consola no interactiva de Cloud: sin `--password` genera una contraseña segura y la
   muestra una sola vez.
 - La lista de comprobación del despliegue está en `docs/DESPLIEGUE_CLOUD.md`.
+
+**D30 · FFmpeg y yt-dlp en Laravel Cloud: binarios estáticos descargados en el build.**
+Cloud no trae FFmpeg ni yt-dlp, y el disco de ejecución es efímero. Lo que se genera en el
+build sí queda dentro de la imagen desplegada. Los comandos de build descargan:
+- FFmpeg y FFprobe estáticos de johnvansickle.com, variante **arm64**, porque el build de
+  Cloud corre en `linux/arm64`. Estas builds incluyen `libass` y `libfreetype`, que hacen
+  falta para los subtítulos y `drawtext` (D18).
+- El binario independiente de yt-dlp (`yt-dlp_linux_aarch64`), que no necesita Python.
+Todo va a `bin/`, que está en `.gitignore`. Como la ruta absoluta de la app en Cloud no se
+conoce de antemano, `config/accesopro.php` acepta rutas relativas a la app
+(`FFMPEG_BIN=bin/ffmpeg`). Un nombre suelto sigue buscándose en el PATH, como en local, y
+una ruta absoluta se usa tal cual. Se descartó `mathiasgrimm/laravel-cloud-binaries`
+(previsto en ARQUITECTURA.md) porque no estaba instalado y bastan unos comandos de build,
+sin añadir otra dependencia.

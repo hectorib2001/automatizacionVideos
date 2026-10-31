@@ -1,5 +1,24 @@
 <?php
 
+/*
+ * Ruta de un binario externo (FFmpeg, yt-dlp):
+ *  - nombre suelto ("ffmpeg")        → se busca en el PATH (local, Windows con winget);
+ *  - ruta absoluta ("/usr/bin/x")    → tal cual;
+ *  - ruta relativa ("bin/ffmpeg")    → relativa a la app. Es lo que se usa en Laravel Cloud,
+ *    donde los binarios estáticos se descargan en bin/ durante el build (ver D30).
+ */
+$binary = static function (string $key, string $default): string {
+    $value = (string) env($key, $default);
+
+    if (! str_contains($value, '/') && ! str_contains($value, '\\')) {
+        return $value;
+    }
+
+    return str_starts_with($value, '/') || preg_match('/^[A-Za-z]:[\\\\\/]/', $value) === 1
+        ? $value
+        : base_path($value);
+};
+
 return [
 
     // Cada rol puede usar un proveedor y modelo distinto. Cambiar de Gemini a
@@ -40,7 +59,7 @@ return [
     // existe; si no, intenta yt-dlp y lo guarda aquí (ver docs/ARQUITECTURA.md).
     'class_video_path' => env('CLASS_VIDEO_PATH', rtrim(env('MATERIALES_PATH', base_path('../materiales')), '/').'/clase/clase.mp4'),
 
-    'yt_dlp_bin' => env('YT_DLP_BIN', 'yt-dlp'),
+    'yt_dlp_bin' => $binary('YT_DLP_BIN', 'yt-dlp'),
 
     // Transcripción de la clase grabada (ver docs/ARQUITECTURA.md). whisper-large-v3-turbo:
     // $0.04/hora de audio, precio oficial de groq.com/pricing (verificar antes de confiar
@@ -82,8 +101,8 @@ return [
         ],
     ],
 
-    'ffmpeg' => env('FFMPEG_BIN', 'ffmpeg'),
-    'ffprobe' => env('FFPROBE_BIN', 'ffprobe'),
+    'ffmpeg' => $binary('FFMPEG_BIN', 'ffmpeg'),
+    'ffprobe' => $binary('FFPROBE_BIN', 'ffprobe'),
 
     // drive | youtube
     'publish_target' => env('PUBLISH_TARGET', 'drive'),

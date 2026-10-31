@@ -28,3 +28,6 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Binarios estáticos (FFmpeg, yt-dlp) descargados en el build de Laravel Cloud (D30)
+/bin

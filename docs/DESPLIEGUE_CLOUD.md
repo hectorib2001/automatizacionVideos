@@ -29,13 +29,25 @@ Plan Starter (5 $ de crédito, disco efímero, scale-to-zero). Ver D7, D9, D28 y
 - [ ] Activar la cola gestionada / worker con **timeout de 3600 s** (una clase de una hora
       tarda decenas de minutos). Sin worker, las fuentes se quedan "en cola".
 
-## 3. Binarios (pendiente)
+## 3. Binarios (FFmpeg, FFprobe, yt-dlp), ver D30
 
-- [ ] FFmpeg/FFprobe y yt-dlp no vienen en Cloud. Sin FFmpeg no hay voz montada, render ni
-      clips. Opción prevista: binarios estáticos incluidos en el despliegue
-      (`mathiasgrimm/laravel-cloud-binaries` u otros) y `FFMPEG_BIN`, `FFPROBE_BIN`,
-      `YT_DLP_BIN` apuntando a ellos. El FFmpeg debe traer `libass` y `libfreetype`
-      (subtítulos y `drawtext`, ver D18).
+- [ ] Comandos de build (Settings → Deployments → Build commands), sustituyendo los actuales:
+      ```bash
+      composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+      mkdir -p bin
+      curl -fsSL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz -o /tmp/ffmpeg.tar.xz
+      tar -xJf /tmp/ffmpeg.tar.xz -C /tmp
+      cp /tmp/ffmpeg-*-arm64-static/ffmpeg /tmp/ffmpeg-*-arm64-static/ffprobe bin/
+      curl -fsSL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_aarch64 -o bin/yt-dlp
+      chmod +x bin/ffmpeg bin/ffprobe bin/yt-dlp
+      ./bin/ffmpeg -version | head -1
+      ```
+      Son binarios **arm64** porque el build de Cloud es `linux/arm64`. Si cambia a x86_64,
+      usar `ffmpeg-release-amd64-static.tar.xz` y `yt-dlp_linux`.
+- [ ] Variables: `FFMPEG_BIN=bin/ffmpeg`, `FFPROBE_BIN=bin/ffprobe`, `YT_DLP_BIN=bin/yt-dlp`
+      (rutas relativas a la app).
+- [ ] Memoria: renderizar 1080×1920 con x264 puede no caber en 512 MiB. Si el worker muere
+      sin error (OOM), subir la memoria del worker a 1–2 GiB.
 
 ## 4. Primer acceso
 
