@@ -32,7 +32,10 @@ final class SynthesizeVoice implements ShouldQueue, ShouldBeUnique
 
     public function handle(ElevenLabsClient $eleven): void
     {
-        if ($this->piece->renders()->where('format', 'audio')->exists()) {
+        // Hecho = archivos en disco (no solo la fila en BD, ver D33). Si se perdieron (disco
+        // efímero de Cloud) se vuelve a sintetizar: cuesta, pero sin audio no hay vídeo.
+        if ($this->piece->isPublished()
+            || ($this->piece->hasRenderFile('audio') && is_file($this->piece->runDir().'/alignment.json'))) {
             return;
         }
 

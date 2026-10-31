@@ -27,8 +27,8 @@ final class GenerateThumbnail implements ShouldQueue, ShouldBeUnique
 
     public function handle(ThumbnailMaker $thumbnailMaker): void
     {
-        if ($this->piece->renders()->where('format', 'thumb')->exists()) {
-            return;
+        if ($this->piece->isPublished() || $this->piece->hasRenderFile('thumb')) {
+            return; // ver D33: hecho = archivo en disco
         }
 
         $title = $this->piece->script['metadata']['title'] ?? $this->piece->idea_title;

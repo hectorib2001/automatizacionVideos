@@ -31,7 +31,11 @@ final class Transcribe implements ShouldQueue, ShouldBeUnique
 
     public function handle(TranscriptionClient $client): void
     {
-        if (! empty($this->source->meta['transcript_path'] ?? null)) {
+        // Hecho = el JSON sigue en disco (D33): en Cloud un redeploy lo borra aunque la ruta
+        // siga en meta, y DetectMoments/CutAndRender lo necesitan.
+        $existing = $this->source->meta['transcript_path'] ?? null;
+
+        if ($existing !== null && is_file($existing)) {
             return;
         }
 

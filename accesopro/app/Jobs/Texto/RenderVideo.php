@@ -41,7 +41,7 @@ final class RenderVideo implements ShouldQueue, ShouldBeUnique
     public function handle(SceneBuilder $sceneBuilder, SubtitleBuilder $subtitleBuilder, FfmpegRenderer $ffmpeg): void
     {
         $pending = collect(self::FORMATS)->keys()
-            ->reject(fn (string $format) => $this->piece->renders()->where('format', $format)->exists());
+            ->reject(fn (string $format) => $this->piece->isPublished() || $this->piece->hasRenderFile($format)); // D33
 
         if ($pending->isEmpty()) {
             $this->piece->markRendered();

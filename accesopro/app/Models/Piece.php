@@ -97,6 +97,24 @@ class Piece extends Model
         }
     }
 
+    /**
+     * ¿Existe de verdad el archivo de este formato? No basta con la fila en `renders`: en
+     * Laravel Cloud el disco es efímero y un redeploy borra los archivos aunque la base de
+     * datos diga que se generaron (D33).
+     */
+    public function hasRenderFile(string $format): bool
+    {
+        $path = $this->renders()->where('format', $format)->value('path');
+
+        return $path !== null && is_file($path);
+    }
+
+    /** Una pieza publicada ya no necesita sus archivos intermedios: nada se regenera. */
+    public function isPublished(): bool
+    {
+        return $this->status === PieceStatus::Publicada;
+    }
+
     /** Carpeta de archivos intermedios de esta pieza (ver docs/ARQUITECTURA.md). */
     public function runDir(): string
     {

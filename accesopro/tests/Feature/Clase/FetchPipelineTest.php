@@ -74,3 +74,22 @@ it('transcribes the audio once and stores the transcript path, not the full tran
     Transcribe::dispatchSync($source);
     Http::assertSentCount(1);
 });
+
+it('transcribes again when the transcript path is stored but the file was lost (D33)', function () {
+    Http::fake(['*/audio/transcriptions' => Http::response([
+        'text' => 'Hola.', 'duration' => 1.0, 'words' => [['word' => 'Hola.', 'start' => 0.0, 'end' => 0.5]], 'segments' => [],
+    ])]);
+
+    $audioPath = (new ExtractAudio(new Source))->audioPath();
+    File::ensureDirectoryExists(dirname($audioPath));
+    file_put_contents($audioPath, 'audio falso');
+
+    $source = Source::create([
+        'type' => 'clase', 'code' => 'lost123', 'ref' => 'https://youtube.com/watch?v=lost123',
+        'meta' => ['transcript_path' => '/borrado/transcript.json'],
+    ]);
+    Transcribe::dispatchSync($source);
+
+    Http::assertSentCount(1);
+    expect(is_file($source->fresh()->meta['transcript_path']))->toBeTrue();
+});

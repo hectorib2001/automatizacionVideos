@@ -92,12 +92,69 @@ it('does nothing when both formats already have a render (idempotent)', function
         'script' => ['scenes' => []],
     ]);
 
-    Render::create(['piece_id' => $piece->id, 'format' => '9x16', 'path' => '/x.mp4', 'duration' => 1]);
-    Render::create(['piece_id' => $piece->id, 'format' => '16x9', 'path' => '/y.mp4', 'duration' => 1]);
+    $dir = sys_get_temp_dir().'/render-skip-'.uniqid();
+    File::ensureDirectoryExists($dir);
+    file_put_contents("{$dir}/a.mp4", 'x');
+    file_put_contents("{$dir}/b.mp4", 'x');
+    Render::create(['piece_id' => $piece->id, 'format' => '9x16', 'path' => "{$dir}/a.mp4", 'duration' => 1]);
+    Render::create(['piece_id' => $piece->id, 'format' => '16x9', 'path' => "{$dir}/b.mp4", 'duration' => 1]);
 
     RenderVideo::dispatchSync($piece);
 
     expect($piece->renders()->count())->toBe(2);
+    File::deleteDirectory($dir);
+});
+
+it('re-renders when the database has the render but the file is gone (ephemeral disk, D33)', function () {
+    $piece = Piece::create([
+        'source_id' => Source::create(['type' => 'temario', 'code' => 'T1_S01'])->id,
+        'kind' => 'texto', 'uid' => 'test-render-video-lost-files', 'idea_title' => 'x',
+        'status' => PieceStatus::Renderizada, 'script' => ['scenes' => []],
+    ]);
+    Render::create(['piece_id' => $piece->id, 'format' => '9x16', 'path' => '/borrado/a.mp4', 'duration' => 1]);
+    Render::create(['piece_id' => $piece->id, 'format' => '16x9', 'path' => '/borrado/b.mp4', 'duration' => 1]);
+
+    // Intenta renderizar de nuevo: sin audio, falla con el error claro (no lo da por hecho).
+    expect(fn () => RenderVideo::dispatchSync($piece))->toThrow(RuntimeException::class, 'no tiene audio');
+});
+
+it('never regenerates anything for a published piece, even without its files', function () {
+    $piece = Piece::create([
+        'source_id' => Source::create(['type' => 'temario', 'code' => 'T1_S01'])->id,
+        'kind' => 'texto', 'uid' => 'test-render-video-published', 'idea_title' => 'x',
+        'status' => PieceStatus::Publicada, 'script' => ['scenes' => []],
+    ]);
+    Http::fake();
+
+    App\Jobs\Texto\SynthesizeVoice::dispatchSync($piece);
+    RenderVideo::dispatchSync($piece);
+    App\Jobs\Common\GenerateThumbnail::dispatchSync($piece);
+
+    Http::assertNothingSent(); // ni ElevenLabs ni nada de pago
+    expect($piece->renders()->count())->toBe(0);
+});
+
+it('re-synthesizes the voice when the audio row exists but the file was lost (D33)', function () {
+    $piece = Piece::create([
+        'source_id' => Source::create(['type' => 'temario', 'code' => 'T1_S01'])->id,
+        'kind' => 'texto', 'uid' => 'test-voice-lost-file', 'idea_title' => 'x',
+        'status' => PieceStatus::Aprobada,
+        'script' => ['hooks' => [['variant' => 'A', 'text' => 'Hola.']], 'explanation' => 'Uno.', 'cta' => 'Fin.'],
+    ]);
+    Render::create(['piece_id' => $piece->id, 'format' => 'audio', 'path' => '/borrado/audio.mp3', 'duration' => 1]);
+
+    Http::fake(['*' => Http::response([
+        'audio_base64' => base64_encode('mp3 falso'),
+        'alignment' => makeFakeAlignment('Hola. Uno. Fin.'),
+    ])]);
+
+    App\Jobs\Texto\SynthesizeVoice::dispatchSync($piece);
+
+    Http::assertSentCount(1);
+    expect($piece->hasRenderFile('audio'))->toBeTrue()
+        ->and(is_file($piece->runDir().'/alignment.json'))->toBeTrue();
+
+    File::deleteDirectory($piece->runDir());
 });
 
 it('throws a clear error when SynthesizeVoice has not run yet', function () {

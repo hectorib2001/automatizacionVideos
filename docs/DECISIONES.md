@@ -278,3 +278,17 @@ pasar desapercibido:
 Además, el filtro `ass` recibe `fontsdir` con la carpeta de fuentes del repo. Un servidor
 sin fuentes instaladas no encontraría "Inter", y libass no dibujaría los subtítulos sin que
 FFmpeg dé error.
+
+**D33 · Idempotencia por archivo en disco, no solo por fila en la base de datos.** Al
+relanzar en Cloud tras varios redeploys, el render falló con `alignment.json: No such file`.
+La base de datos decía "audio hecho", pero el disco efímero ya no tenía el archivo, y
+`SynthesizeVoice` se lo saltaba. Ahora cada paso que produce un archivo (voz, vídeo, clip,
+miniatura, transcripción) solo se da por hecho si **el archivo existe**. Si falta, se
+regenera, con el coste que suponga (≈0,12 € de voz), porque sin él no hay vídeo. Hay una
+excepción: si la pieza ya está **publicada**, sus intermedios no hacen falta y no se
+regenera nada. Relanzar lo publicado sigue costando 0 €, verificado en local: 59 eventos de
+coste y 37 renders antes y después.
+En el flujo normal esto casi nunca ocurre, porque `RunSourcePipeline` hace todos los pasos de
+una pieza seguidos en el mismo contenedor. Solo pasa si un trabajo falla a mitad y se
+redespliega antes de relanzarlo. La solución definitiva para producción es guardar los
+intermedios en un bucket (regla 9 de CLAUDE.md), que queda pendiente.
