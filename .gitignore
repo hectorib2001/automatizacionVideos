@@ -1,0 +1,10 @@
+# Material confidencial de Grupo Mentor / AccesoPro: nunca se sube al repo.
+/materiales
+
+# Archivos intermedios de cada ejecución del pipeline (audio, escenas, renders).
+/accesopro/storage/app/private/runs
+
+# Entornos y artefactos locales habituales.
+.DS_Store
+Thumbs.db
+*.log
