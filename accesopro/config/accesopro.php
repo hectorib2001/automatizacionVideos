@@ -104,6 +104,12 @@ return [
     'ffmpeg' => $binary('FFMPEG_BIN', 'ffmpeg'),
     'ffprobe' => $binary('FFPROBE_BIN', 'ffprobe'),
 
+    // Ajustes de x264 para máquinas pequeñas (Laravel Cloud 512 MiB / 1 vCPU, ver D31).
+    // Vacíos = valores por defecto de FFmpeg (lo que se usa en local).
+    'ffmpeg_threads' => env('FFMPEG_THREADS'),   // p. ej. 1: mucha menos memoria
+    'ffmpeg_preset' => env('FFMPEG_PRESET'),     // p. ej. veryfast: menos memoria y CPU
+    'ffmpeg_timeout' => (int) env('FFMPEG_TIMEOUT', 900), // segundos por render
+
     // drive | youtube
     'publish_target' => env('PUBLISH_TARGET', 'drive'),
     'drive_root' => env('GOOGLE_DRIVE_ROOT', 'AccesoPro'),

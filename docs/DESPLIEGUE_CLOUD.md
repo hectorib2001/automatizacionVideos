@@ -45,7 +45,8 @@ Plan Starter (5 $ de crédito, disco efímero, scale-to-zero). Ver D7, D9, D28 y
       Son binarios **arm64** porque el build de Cloud es `linux/arm64`. Si cambia a x86_64,
       usar `ffmpeg-release-amd64-static.tar.xz` y `yt-dlp_linux`.
 - [ ] Variables: `FFMPEG_BIN=bin/ffmpeg`, `FFPROBE_BIN=bin/ffprobe`, `YT_DLP_BIN=bin/yt-dlp`
-      (rutas relativas a la app).
+      (rutas relativas a la app) y, con 512 MiB, `FFMPEG_THREADS=1` y
+      `FFMPEG_PRESET=veryfast` (D31).
 - [ ] Memoria: renderizar 1080×1920 con x264 puede no caber en 512 MiB. Si el worker muere
       sin error (OOM), subir la memoria del worker a 1–2 GiB.
 

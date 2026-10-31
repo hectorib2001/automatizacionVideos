@@ -50,7 +50,7 @@ final class ThumbnailMaker
         ]);
 
         if (! $result->successful()) {
-            throw new RuntimeException("FFmpeg falló al generar la miniatura {$outputPath}: ".$result->errorOutput());
+            throw FfmpegFailure::from('generar la miniatura', $result);
         }
     }
 

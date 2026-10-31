@@ -65,3 +65,40 @@ it('renders a real short video with background, scene text and burned subtitles'
     expect($video['width'])->toBe(640)
         ->and($video['height'])->toBe(360);
 });
+
+it('reports the end of ffmpeg stderr and flags an out of memory kill', function () {
+    $banner = "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/\n".str_repeat("  configuration: --enable-libass\n", 30);
+    Process::fake(['*' => Process::result(errorOutput: $banner."frame=  120 fps= 12\n", exitCode: 137)]);
+
+    expect(fn () => $this->renderer->render('bg.png', 'a.mp3', [], 'subs.ass', 10.0, 1080, 1920, "{$this->outDir}/video_9x16.mp4", "{$this->outDir}/work"))
+        ->toThrow(function (App\Services\Video\FfmpegFailure $e) {
+            expect($e->getMessage())
+                ->toContain('renderizar video_9x16.mp4 (código 137)')
+                ->toContain('Probable falta de memoria')
+                ->toContain('frame=  120')
+                ->not->toContain('ffmpeg version'); // el banner del principio no aporta nada
+        });
+});
+
+it('shows the real ffmpeg error line without a memory hint for normal failures', function () {
+    Process::fake(['*' => Process::result(errorOutput: "ffmpeg version 7\n[Parsed_drawtext_0] Cannot find a valid font\nError initializing filters", exitCode: 1)]);
+
+    expect(fn () => $this->renderer->render('bg.png', 'a.mp3', [], 'subs.ass', 10.0, 1080, 1920, "{$this->outDir}/v.mp4", "{$this->outDir}/work"))
+        ->toThrow(function (App\Services\Video\FfmpegFailure $e) {
+            expect($e->getMessage())->toContain('Cannot find a valid font')->not->toContain('falta de memoria');
+        });
+});
+
+it('adds low memory x264 options only when configured', function () {
+    Process::fake();
+    $render = fn () => $this->renderer->render('bg.png', 'a.mp3', [], 'subs.ass', 10.0, 1080, 1920, "{$this->outDir}/v.mp4", "{$this->outDir}/work");
+
+    $render();
+    Process::assertRan(fn ($p) => ! in_array('-threads', $p->command, true) && ! in_array('-preset', $p->command, true));
+
+    config(['accesopro.ffmpeg_threads' => '1', 'accesopro.ffmpeg_preset' => 'veryfast']);
+    $render();
+    Process::assertRan(fn ($p) => in_array('-threads', $p->command, true)
+        && in_array('veryfast', $p->command, true)
+        && in_array('rc-lookahead=10', $p->command, true));
+});

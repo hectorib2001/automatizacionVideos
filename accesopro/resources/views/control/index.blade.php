@@ -25,6 +25,7 @@
         .exports { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; font-size: 13px; color: #52606A; }
         .exports a { padding: 6px 12px; border: 1px solid #D7DCE1; border-radius: 6px; text-decoration: none; color: #25394F; font-weight: 600; background: #fff; }
         .exports a:hover { background: #F4F6F8; }
+        td.reason { max-width: 280px; overflow-wrap: anywhere; color: #52606A; }
     </style>
 
     <div class="toolbar">
@@ -93,7 +94,16 @@
                         <td>{{ number_format($piece->cost_eur, 5) }}</td>
                         <td>@if ($url9x16)<a href="{{ $url9x16 }}" target="_blank" rel="noopener">Ver</a>@else<span class="muted">—</span>@endif</td>
                         <td>@if ($url16x9)<a href="{{ $url16x9 }}" target="_blank" rel="noopener">Ver</a>@else<span class="muted">—</span>@endif</td>
-                        <td>{{ $piece->discard_reason ? \Illuminate\Support\Str::limit($piece->discard_reason, 140) : '' }}</td>
+                        <td class="reason">
+                            @if ($piece->discard_reason)
+                                {{ \Illuminate\Support\Str::limit($piece->discard_reason, 90) }}
+                                @if (mb_strlen($piece->discard_reason) > 90)
+                                    {{-- Los motivos del revisor vienen unidos con "; ": en la ventana, uno por párrafo. --}}
+                                    <button type="button" class="detail-more" data-detail-title="Motivo de descarte · {{ $piece->idea_title }}"
+                                        data-detail="{{ preg_replace('/(?<=[.!?»”)])\s*;\s+/u', "\n\n", $piece->discard_reason) }}">Ver detalle</button>
+                                @endif
+                            @endif
+                        </td>
                     </tr>
                 @empty
                     <tr><td colspan="8" class="muted">No hay piezas todavía.</td></tr>
@@ -104,4 +114,6 @@
             {{ $pieces->links() }}
         </div>
     </div>
+
+    @include('partials.detail-dialog')
 @endsection

@@ -72,7 +72,7 @@ it('shows the scope note and the existing sources', function () {
 
     $this->actingAs($this->user)->get(route('sources.index'))
         ->assertOk()
-        ->assertSee('solo Matemáticas, prueba de acceso a Grado Superior, Comunitat Valenciana')
+        ->assertSee('Solo Matemáticas · Grado Superior · Comunitat Valenciana')
         ->assertSee('Números reales')
         ->assertSee('material original (materiales/)');
 });
@@ -200,4 +200,20 @@ it('keeps the official syllabus used by the reviewer identical to the documented
     expect(app(SourceMaterial::class)->officialSyllabus())
         ->toBe(file_get_contents($documented))
         ->toContain('Bloque 1: Sentido numérico');
+});
+
+it('shows a short error in the table and keeps the full error for the detail popup', function () {
+    $full = "FFmpeg falló al renderizar video_9x16.mp4 (código 137). Probable falta de memoria.\n"
+        .str_repeat('frame=  120 fps= 12 q=28.0 size=   1024kB time=00:00:04.00 ', 20)."\nLÍNEA FINAL <script>";
+    Source::create(['type' => 'temario', 'code' => 'T1_S01', 'title' => 'Números reales', 'run_status' => Source::RUN_ERROR, 'run_error' => $full]);
+
+    $html = $this->actingAs($this->user)->get(route('sources.index'))->assertOk()->getContent();
+
+    // En la celda: solo la primera línea, recortada.
+    expect($html)->toContain('FFmpeg falló al renderizar video_9x16.mp4 (código 137). Probable falta...')
+        ->toContain('Ver detalle')
+        ->toContain('id="detail-dialog"')
+        // El detalle completo va escapado en el atributo (nunca HTML ejecutable).
+        ->toContain('LÍNEA FINAL &lt;script&gt;')
+        ->not->toContain('LÍNEA FINAL <script>');
 });

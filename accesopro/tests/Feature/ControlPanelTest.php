@@ -79,3 +79,34 @@ it('logs out and can no longer reach the control panel', function () {
 
     $this->get(route('control.index'))->assertRedirect(route('login'));
 });
+
+it('shortens long discard reasons and shows each reason as a paragraph in the detail popup', function () {
+    $user = User::factory()->create();
+    $source = Source::create(['type' => 'clase', 'code' => 'fQBP3hY39oU', 'title' => 'Clase']);
+    $reason = 'El criterio «decimal infinito, luego irracional» es falso: 1/3 también tiene infinitos decimales.; '
+        .'La expresión «lo que veíamos» hace depender el clip de la clase anterior.; Usa <b>pizarra</b> que no se ve.';
+
+    Piece::create([
+        'source_id' => $source->id, 'kind' => 'clip', 'uid' => 'clip-largo',
+        'idea_title' => 'Producto de irracionales', 'status' => PieceStatus::Descartada, 'discard_reason' => $reason,
+    ]);
+
+    $html = $this->actingAs($user)->get(route('control.index'))->assertOk()->getContent();
+
+    expect($html)->toContain('Ver detalle')
+        ->toContain('id="detail-dialog"')
+        ->toContain('Motivo de descarte · Producto de irracionales')
+        // Un motivo por párrafo en la ventana; el ";" interno de "falso:" no se toca.
+        ->toContain("decimales.\n\nLa expresión")
+        ->toContain('Usa &lt;b&gt;pizarra&lt;/b&gt;')
+        ->not->toContain('<b>pizarra</b>');
+});
+
+it('does not show the detail button for short discard reasons', function () {
+    $user = User::factory()->create();
+    $source = Source::create(['type' => 'temario', 'code' => 'T1_S01', 'title' => 'T1_S01']);
+    Piece::create(['source_id' => $source->id, 'kind' => 'texto', 'uid' => 'corto', 'idea_title' => 'x', 'status' => PieceStatus::Descartada, 'discard_reason' => 'Dato inventado']);
+
+    expect($this->actingAs($user)->get(route('control.index'))->getContent())
+        ->toContain('Dato inventado')->not->toContain('Ver detalle');
+});

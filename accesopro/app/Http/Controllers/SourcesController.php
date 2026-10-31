@@ -37,7 +37,7 @@ final class SourcesController extends Controller
         return view('sources.index', [
             'sources' => $sources,
             'uploadLimit' => ini_get('upload_max_filesize'),
-            'queueConnection' => config('queue.default'),
+            'isLocal' => app()->isLocal(),
         ]);
     }
 

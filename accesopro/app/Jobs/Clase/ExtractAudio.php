@@ -10,6 +10,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
+use App\Services\Video\FfmpegFailure;
 use RuntimeException;
 
 /** Extrae el audio de la clase (mono, 16kHz, comprimido) para transcribirlo. */
@@ -52,7 +53,7 @@ final class ExtractAudio implements ShouldQueue, ShouldBeUnique
         ]);
 
         if (! $result->successful()) {
-            throw new RuntimeException("FFmpeg falló al extraer el audio: ".$result->errorOutput());
+            throw FfmpegFailure::from('extraer el audio', $result);
         }
     }
 

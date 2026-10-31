@@ -256,3 +256,13 @@ conoce de antemano, `config/accesopro.php` acepta rutas relativas a la app
 una ruta absoluta se usa tal cual. Se descartó `mathiasgrimm/laravel-cloud-binaries`
 (previsto en ARQUITECTURA.md) porque no estaba instalado y bastan unos comandos de build,
 sin añadir otra dependencia.
+
+**D31 · FFmpeg en máquinas pequeñas: errores legibles y codificación configurable.** El
+primer render en Cloud (512 MiB, 1 vCPU) falló con un mensaje que solo mostraba el banner de
+FFmpeg, porque se guardaba el principio de stderr y el error real está al final.
+`FfmpegFailure` muestra ahora el código de salida y las últimas 12 líneas, y avisa
+explícitamente cuando el proceso muere por falta de memoria (código 137). Para que el render
+quepa en memoria, x264 admite `FFMPEG_THREADS` (con `rc-lookahead=10`) y `FFMPEG_PRESET`.
+Si no se configuran, no se añade nada y el render local no cambia. El timeout de render pasa
+de 180 s fijos a `FFMPEG_TIMEOUT`, 900 s por defecto, porque con 1 vCPU un vídeo de 50 s
+tarda bastante más que en local.

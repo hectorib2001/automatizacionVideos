@@ -38,25 +38,18 @@
         .run-form input { width: 64px; }
         .run-form .btn { margin-top: 0; padding: 6px 12px; font-size: 13px; }
         .muted { color: #9AA3AA; }
-        .err-detail { color: #B3261E; font-size: 12px; margin-top: 4px; max-width: 320px; }
+        .err-detail { color: #B3261E; font-size: 12px; margin-top: 4px; max-width: 260px; overflow-wrap: anywhere; }
     </style>
 
     <h1>Fuentes de contenido</h1>
 
     <div class="note">
-        <strong>Alcance actual: solo Matemáticas, prueba de acceso a Grado Superior, Comunitat Valenciana.</strong>
-        El agente revisor compara cada guion y cada clip con el
-        <strong>temario oficial de esa prueba</strong> (DOGV 25/02/2026), así que el material que subas tiene que
-        ser de ese temario. Un tema de otra asignatura u otra comunidad se rechazaría entero (con razón: no
-        habría temario oficial con el que comprobarlo). Añadir otras pruebas significa asociar a cada fuente su
-        propio temario oficial; está previsto, pero no implementado.
-        <br><br>
-        Cada idea o clip procesado gasta dinero en APIs (≈0,22 € por vídeo de texto, ≈0,05 € por clip), con
-        el límite diario de gasto configurado. La generación va por la cola de trabajos: necesita
-        <code>php artisan queue:work --timeout=3600</code> en marcha
-        @if ($queueConnection === 'sync')
-            (ahora mismo la cola es <code>sync</code>: se ejecutará dentro de la propia petición)
-        @endif.
+        <strong>Solo Matemáticas · Grado Superior · Comunitat Valenciana.</strong>
+        El revisor compara todo con ese temario oficial: otro material se rechazaría.
+        Coste aproximado: 0,22 € por vídeo de texto y 0,05 € por clip.
+        @if ($isLocal)
+            <br>Local: arranca con <code>composer run dev</code> para que el botón «Generar» procese la cola.
+        @endif
     </div>
 
     @if (session('status'))
@@ -140,7 +133,10 @@
                                     <small>desde {{ $source->run_started_at->format('H:i') }}</small>
                                 @endif
                                 @if ($source->run_error)
-                                    <div class="err-detail">{{ \Illuminate\Support\Str::limit($source->run_error, 220) }}</div>
+                                    <div class="err-detail">
+                                        {{ \Illuminate\Support\Str::limit(strtok($source->run_error, "\n"), 70) }}
+                                        <button type="button" class="detail-more" data-detail-code data-detail-title="Error en «{{ $source->title ?: $source->code }}»" data-detail="{{ $source->run_error }}">Ver detalle</button>
+                                    </div>
                                 @endif
                             @else
                                 <span class="muted">—</span>
@@ -161,4 +157,6 @@
             </tbody>
         </table>
     </div>
+
+    @include("partials.detail-dialog")
 @endsection

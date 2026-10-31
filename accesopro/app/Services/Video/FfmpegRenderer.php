@@ -63,7 +63,7 @@ final class FfmpegRenderer
 
         $filterGraph = $this->buildFilterGraph($scenes, $assPath, $width, $height, $workDir);
 
-        $result = Process::timeout(180)->run([
+        $result = Process::timeout((int) config('accesopro.ffmpeg_timeout'))->run([
             config('accesopro.ffmpeg'),
             '-y',
             '-loop', '1',
@@ -74,6 +74,7 @@ final class FfmpegRenderer
             '-map', '0:v',
             '-map', '1:a',
             '-c:v', 'libx264',
+            ...$this->encoderOptions(),
             '-pix_fmt', 'yuv420p',
             '-r', '30',
             '-c:a', 'aac',
@@ -84,7 +85,7 @@ final class FfmpegRenderer
         ]);
 
         if (! $result->successful()) {
-            throw new RuntimeException("FFmpeg falló al renderizar {$outputPath}: ".$result->errorOutput());
+            throw FfmpegFailure::from('renderizar '.basename($outputPath), $result);
         }
     }
 
@@ -111,7 +112,7 @@ final class FfmpegRenderer
               '[bg2][fg2]overlay=(W-w)/2:(H-h)/2,'.'ass='.$this->escapePath($assPath)
             : "scale={$width}:{$height}:force_original_aspect_ratio=decrease,pad={$width}:{$height}:(ow-iw)/2:(oh-ih)/2,".'ass='.$this->escapePath($assPath);
 
-        $result = Process::timeout(180)->run([
+        $result = Process::timeout((int) config('accesopro.ffmpeg_timeout'))->run([
             config('accesopro.ffmpeg'),
             '-y',
             '-ss', $this->seconds($start),
@@ -119,6 +120,7 @@ final class FfmpegRenderer
             '-t', $this->seconds($duration),
             '-vf', $filter,
             '-c:v', 'libx264',
+            ...$this->encoderOptions(),
             '-pix_fmt', 'yuv420p',
             '-r', '30',
             '-c:a', 'aac',
@@ -127,7 +129,7 @@ final class FfmpegRenderer
         ]);
 
         if (! $result->successful()) {
-            throw new RuntimeException("FFmpeg falló al cortar el clip {$outputPath}: ".$result->errorOutput());
+            throw FfmpegFailure::from('cortar el clip '.basename($outputPath), $result);
         }
     }
 
@@ -192,6 +194,28 @@ final class FfmpegRenderer
     private function seconds(float $value): string
     {
         return number_format($value, 3, '.', '');
+    }
+
+    /**
+     * Opciones de x264 configurables (FFMPEG_THREADS, FFMPEG_PRESET). Sin configurar no se
+     * añade nada y FFmpeg usa sus valores por defecto.
+     *
+     * @return list<string>
+     */
+    private function encoderOptions(): array
+    {
+        $options = [];
+
+        if ($preset = config('accesopro.ffmpeg_preset')) {
+            array_push($options, '-preset', (string) $preset);
+        }
+
+        if ($threads = config('accesopro.ffmpeg_threads')) {
+            // threads limita el codificador; lookahead corto reduce los fotogramas en memoria.
+            array_push($options, '-threads', (string) (int) $threads, '-x264-params', 'rc-lookahead=10');
+        }
+
+        return $options;
     }
 
     private function escapePath(string $path): string
