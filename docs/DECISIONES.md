@@ -200,3 +200,27 @@ datos idempotente, no a mano.
 decimal, para que quien evalúa (no técnico) pueda abrirla con doble clic en Excel con los
 acentos y los importes bien. Un mismo servicio (`ControlTableExporter`) alimenta las
 descargas del panel y el comando `accesopro:export`.
+
+**D28 · Fuentes subidas desde el panel: PDF y YouTube, limitadas al temario actual.** Para
+generar contenido sin tocar la terminal, la página "Fuentes" permite añadir temas (PDF) y
+clases (enlace de YouTube) y lanzar el pipeline con un botón.
+- *Solo enlaces de YouTube para clases, no subida de vídeo.* Una clase de una hora pesa entre
+  0,5 y 1 GB: choca con los límites de subida de PHP y con el disco efímero de Laravel Cloud.
+  `FetchClassVideo` ya sabe descargar con yt-dlp.
+- *Solo PDF para temas* (`smalot/pdfparser`, PHP puro y sin binarios). El texto se extrae al
+  subir el archivo y se rechazan los PDF escaneados (menos de 300 caracteres) y los demasiado
+  largos (más de 60.000 caracteres, porque ese texto viaja en cada llamada al generador).
+- *Alcance: solo Matemáticas GS de la Comunitat Valenciana*, con una nota visible en la
+  página. El revisor compara siempre con `TEMARIO_OFICIAL.md`; un tema de otra prueba se
+  rechazaría entero. Generalizarlo exige asociar un temario oficial a cada fuente.
+- *El botón va por la cola* (`RunSourcePipeline`, `timeout` de 3600 s, un solo intento):
+  una clase tarda decenas de minutos y una petición web no puede esperar. Se subió
+  `DB_QUEUE_RETRY_AFTER` a 3700 s; con los 90 s por defecto, la cola reentregaría el job a
+  mitad de ejecución. Si falla, el error queda en la fuente y se relanza con el botón. Es
+  seguro porque cada paso interno es idempotente.
+- *Una sola implementación del disparador*: la lógica salió de `RunCommand` a
+  `PipelineRunner`. Cada fuente guarda sus archivos en
+  `storage/app/private/sources/{tipo}/{código}/`. Antes todas las clases compartían
+  `materiales/clase/clase.mp4`, y una segunda clase habría reutilizado el vídeo de la
+  primera. La fuente original de T1_S01 y la clase ya procesada siguen leyendo de
+  `materiales/`.

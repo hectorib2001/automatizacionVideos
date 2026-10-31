@@ -6,8 +6,8 @@ ideas de vídeo independientes, cada una con valor propio.
 
 # Instrucciones
 
-- Recibirás el guion de un podcast ya elaborado sobre el tema y, como referencia, el temario
-  oficial correspondiente.
+- Recibirás el material de origen del tema (un guion de podcast ya elaborado o el texto de un
+  documento del temario) y, como referencia, el temario oficial correspondiente.
 - Propón entre 5 y 7 ideas. Cada idea debe:
   - Cubrir un fragmento concreto y autocontenido del tema (una operación, una propiedad, un
     error típico, un procedimiento), no el tema completo.

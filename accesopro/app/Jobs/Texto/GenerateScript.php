@@ -57,7 +57,7 @@ final class GenerateScript implements ShouldQueue, ShouldBeUnique
 
         $prompt = "# Idea a desarrollar\n\n".json_encode($this->idea, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)."\n\n"
             ."# Temario oficial\n\n{$material->officialSyllabus()}\n\n"
-            ."# Guion de podcast (fuente de contenido)\n\n{$material->podcastTranscript($this->source->code)}";
+            .$material->scriptContext($this->source);
 
         $script = $llm->structured(
             role: 'generator',

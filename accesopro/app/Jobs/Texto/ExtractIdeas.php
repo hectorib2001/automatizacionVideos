@@ -38,9 +38,7 @@ final class ExtractIdeas implements ShouldQueue, ShouldBeUnique
         $system = file_get_contents(resource_path('prompts/extract_ideas.md'));
 
         $prompt = "# Temario oficial\n\n{$material->officialSyllabus()}\n\n"
-            ."# Estructura del tema en AccesoPro\n\n{$material->accesoProSyllabus()}\n\n"
-            ."# Guion de podcast ya elaborado (fuente principal)\n\n"
-            .json_encode($material->podcastScript($this->source->code), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            .$material->ideasContext($this->source);
 
         $result = $llm->structured(
             role: 'generator',

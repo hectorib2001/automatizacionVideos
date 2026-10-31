@@ -205,8 +205,26 @@ de la base de datos; se exportarán a CSV en la Fase 6.)
       `storage/app/private/exports/`). Formato para Excel en español (UTF-8 con BOM, `;`,
       coma decimal). Exportado en real: 17 piezas, 18 revisiones, 8 rechazos.
       4 tests Pest en `tests/Feature/ControlExportTest.php`.
-- [ ] Ejecución completa desde cero con un solo disparador; relanzar sin duplicados
-- [ ] Deploy en Laravel Cloud (binarios estáticos, worker, límite de gasto)
+- [x] **Página "Fuentes" en el panel** (D28): añadir temas en PDF y clases por enlace de
+      YouTube, y botón "Generar contenido" (con límite de ideas/clips) que encola el pipeline
+      (`RunSourcePipeline`) sin tocar la terminal. La lógica del pipeline salió de
+      `RunCommand` a `App\Services\Pipeline\PipelineRunner`, compartida por el comando y el
+      botón. Cada fuente tiene ahora sus propios archivos (`Source::storageDir()`,
+      `classVideoPath()`, `documentTextPath()`); el material original de T1_S01 y la clase
+      ya procesada siguen funcionando igual. Alcance limitado a Matemáticas GS Comunitat
+      Valenciana (nota visible en la página). Requiere `php artisan queue:work --timeout=3600`.
+- [x] **Relanzar sin duplicados — verificado en real (31/10).**
+      `accesopro:run T1_S01 --limit=0 --class=<clase> --clip-limit=0` sobre todo lo ya
+      publicado (7 ideas + 10 clips): la base de datos quedó idéntica antes y después
+      (17 piezas, 18 revisiones, 37 renders, 20 publicaciones, 59 eventos de coste,
+      2,728059 € en total). **Cero llamadas de pago y cero duplicados**: cada paso detecta
+      que ya hizo su trabajo y sale. También confirma que el refactor a `PipelineRunner` no
+      rompió el pipeline real.
+- [ ] Ejecución completa desde cero (base de datos vacía) con un solo disparador
+- [ ] Deploy en Laravel Cloud (binarios estáticos, worker, límite de gasto). **Worker
+      obligatorio** para el botón "Generar" de `/fuentes`: activar la cola gestionada con
+      timeout de 3600 s (y `DB_QUEUE_RETRY_AFTER`/`retry_after` por encima). En local basta
+      con `composer run dev` (arranca la web y el worker a la vez).
 
 ## Fase 5 – Calidad final, YouTube y Nivel 2 barato
 - [ ] `YouTubePublisher` (no listado, miniatura, control de cuota); si queda en privado, plan B documentado

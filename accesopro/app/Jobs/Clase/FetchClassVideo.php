@@ -14,7 +14,7 @@ use RuntimeException;
 
 /**
  * Descarga la clase grabada con yt-dlp. Si ya hay un MP4 en
- * `config('accesopro.class_video_path')` (descargado a mano o en una ejecución anterior),
+ * `Source::classVideoPath()` (descargado a mano o en una ejecución anterior),
  * no vuelve a descargar. Si YouTube bloquea la descarga, documenta el error y pide subir el
  * MP4 a mano (ver docs/ARQUITECTURA.md).
  */
@@ -33,7 +33,7 @@ final class FetchClassVideo implements ShouldQueue, ShouldBeUnique
 
     public function handle(): void
     {
-        $path = config('accesopro.class_video_path');
+        $path = $this->source->classVideoPath();
 
         if (is_file($path)) {
             return;

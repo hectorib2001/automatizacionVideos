@@ -5,8 +5,8 @@ YouTube) dirigidos a adultos que preparan una prueba de acceso a Grado Superior.
 
 # Instrucciones
 
-- Recibirás una idea concreta (título y resumen), el guion del podcast del tema como fuente de
-  contenido, y el temario oficial como referencia.
+- Recibirás una idea concreta (título y resumen), el material de origen del tema (guion de podcast o
+  documento del temario) como fuente de contenido, y el temario oficial como referencia.
 - Escribe un guion de **30 a 60 segundos hablados (75-150 palabras en total entre gancho,
   explicación y CTA)** con esta estructura:
   - **hooks**: dos variantes de gancho (A y B) para los primeros 3-5 segundos. Deben ser
@@ -25,9 +25,9 @@ YouTube) dirigidos a adultos que preparan una prueba de acceso a Grado Superior.
     la que provienen. Si el guion no afirma ningún cálculo, deja la lista vacía.
   - **syllabus_refs**: los saberes básicos oficiales que trata este guion, citados literalmente
     del temario oficial.
-- Usa solo el contenido del guion del podcast y el temario oficial. No inventes estadísticas,
+- Usa solo el contenido del material de origen y el temario oficial. No inventes estadísticas,
   porcentajes, fechas, ni afirmes que una técnica "resuelve el X% de los errores" o similar si
-  esa cifra no aparece en una fuente fiable (el guion del podcast puede contener frases de
+  esa cifra no aparece en una fuente fiable (el material de origen puede contener frases de
   cierre con cifras sin respaldo: no las repitas como si fueran un hecho verificado).
 - Verifica mentalmente cada cálculo antes de escribirlo: un guion con un error matemático es
   peor que no publicarlo.

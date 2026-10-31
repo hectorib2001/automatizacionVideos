@@ -34,7 +34,7 @@ final class ExtractAudio implements ShouldQueue, ShouldBeUnique
             return;
         }
 
-        $videoPath = config('accesopro.class_video_path');
+        $videoPath = $this->source->classVideoPath();
 
         if (! is_file($videoPath)) {
             throw new RuntimeException("No existe el vídeo de la clase en {$videoPath}: ejecuta FetchClassVideo primero.");
@@ -58,6 +58,6 @@ final class ExtractAudio implements ShouldQueue, ShouldBeUnique
 
     public function audioPath(): string
     {
-        return dirname(config('accesopro.class_video_path')).'/audio.mp3';
+        return dirname($this->source->classVideoPath()).'/audio.mp3';
     }
 }

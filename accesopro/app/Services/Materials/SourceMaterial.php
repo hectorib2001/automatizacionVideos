@@ -2,6 +2,7 @@
 
 namespace App\Services\Materials;
 
+use App\Models\Source;
 use RuntimeException;
 
 /**
@@ -42,6 +43,32 @@ final class SourceMaterial
         return collect($turnos)
             ->map(fn (array $turno) => "[{$turno['hablante']}] {$turno['texto']}")
             ->implode("\n");
+    }
+
+    /**
+     * Material con el que se extraen las ideas de un tema. Si el tema se subió como PDF desde
+     * el panel, es el texto de ese documento; si no, la estructura del tema de AccesoPro +
+     * el guion de podcast de materiales/ (flujo original de T1_S01).
+     */
+    public function ideasContext(Source $source): string
+    {
+        if ($path = $source->documentTextPath()) {
+            return "# Documento del tema (fuente principal)\n\n".$this->read($path);
+        }
+
+        return "# Estructura del tema en AccesoPro\n\n{$this->accesoProSyllabus()}\n\n"
+            ."# Guion de podcast ya elaborado (fuente principal)\n\n"
+            .json_encode($this->podcastScript($source->code), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    }
+
+    /** Material del que se escribe cada guion (mismo criterio que ideasContext()). */
+    public function scriptContext(Source $source): string
+    {
+        if ($path = $source->documentTextPath()) {
+            return "# Documento del tema (fuente de contenido)\n\n".$this->read($path);
+        }
+
+        return "# Guion de podcast (fuente de contenido)\n\n".$this->podcastTranscript($source->code);
     }
 
     private function read(string $path): string

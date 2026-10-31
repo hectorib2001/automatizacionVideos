@@ -32,7 +32,8 @@ php artisan accesopro:check                 # comprueba FFmpeg, LLMs, ElevenLabs
 php artisan accesopro:voice:clone a.mp3 b.mp3
 php artisan accesopro:voice:test
 php artisan accesopro:run T1_S01            # (Fase 1+) disparador único del pipeline
-php artisan queue:work --tries=3            # worker local
+php artisan accesopro:export              # CSV: tabla de control, revisiones, rechazos
+php artisan queue:work --timeout=3600       # worker (necesario para el botón "Generar" de /fuentes)
 php artisan test
 ```
 

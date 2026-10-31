@@ -48,12 +48,21 @@
             box-shadow: 0 1px 3px rgba(0,0,0,.08);
         }
         a { color: var(--primary-green); }
+        header.topbar .nav { display: flex; gap: 6px; margin-right: auto; margin-left: 28px; }
+        header.topbar .nav a { color: #C9D1DA; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 14px; }
+        header.topbar .nav a:hover { color: #fff; }
+        header.topbar .nav a.active { color: #fff; background: var(--soft-blue); }
     </style>
+    @yield('head-extra')
 </head>
 <body>
 @auth
     <header class="topbar">
         <div class="brand">Acceso<span>Pro</span> · Control</div>
+        <nav class="nav">
+            <a href="{{ route('control.index') }}" @class(['active' => request()->routeIs('control.*')])>Tabla de control</a>
+            <a href="{{ route('sources.index') }}" @class(['active' => request()->routeIs('sources.*')])>Fuentes</a>
+        </nav>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit">Cerrar sesión ({{ auth()->user()->email }})</button>

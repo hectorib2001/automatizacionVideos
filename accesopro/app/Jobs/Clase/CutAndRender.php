@@ -48,7 +48,7 @@ final class CutAndRender implements ShouldQueue, ShouldBeUnique
             return;
         }
 
-        $videoPath = config('accesopro.class_video_path');
+        $videoPath = $this->piece->source->classVideoPath();
         $source = $this->piece->source;
         $transcriptPath = $source->meta['transcript_path'] ?? null;
 
