@@ -7,6 +7,7 @@ use App\Models\Render;
 use App\Services\Video\FfmpegRenderer;
 use App\Services\Video\SceneBuilder;
 use App\Services\Video\SubtitleBuilder;
+use App\Services\Video\VideoFormat;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -25,12 +26,6 @@ final class RenderVideo implements ShouldQueue, ShouldBeUnique
 
     public int $tries = 3;
 
-    /** @var array<string, array{0: int, 1: int}> */
-    private const FORMATS = [
-        '9x16' => [1080, 1920],
-        '16x9' => [1920, 1080],
-    ];
-
     public function __construct(public readonly Piece $piece) {}
 
     public function uniqueId(): string
@@ -40,7 +35,7 @@ final class RenderVideo implements ShouldQueue, ShouldBeUnique
 
     public function handle(SceneBuilder $sceneBuilder, SubtitleBuilder $subtitleBuilder, FfmpegRenderer $ffmpeg): void
     {
-        $pending = collect(self::FORMATS)->keys()
+        $pending = collect(VideoFormat::names())
             ->reject(fn (string $format) => $this->piece->isPublished() || $this->piece->hasRenderFile($format)); // D33
 
         if ($pending->isEmpty()) {
@@ -60,7 +55,7 @@ final class RenderVideo implements ShouldQueue, ShouldBeUnique
         $dir = $this->piece->runDir();
 
         foreach ($pending as $format) {
-            [$width, $height] = self::FORMATS[$format];
+            [$width, $height] = VideoFormat::dimensions($format);
 
             $background = "{$dir}/bg_{$format}.png";
             $sceneBuilder->renderBackground($width, $height, $background);

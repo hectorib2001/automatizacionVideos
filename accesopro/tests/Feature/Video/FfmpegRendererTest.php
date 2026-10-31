@@ -102,3 +102,18 @@ it('adds low memory x264 options only when configured', function () {
         && in_array('veryfast', $p->command, true)
         && in_array('rc-lookahead=10', $p->command, true));
 });
+
+it('scales the output resolution with VIDEO_SCALE, keeping even dimensions', function () {
+    expect(App\Services\Video\VideoFormat::dimensions('9x16'))->toBe([1080, 1920]);
+
+    config(['accesopro.video_scale' => 0.5]);
+    expect(App\Services\Video\VideoFormat::dimensions('9x16'))->toBe([540, 960])
+        ->and(App\Services\Video\VideoFormat::dimensions('16x9'))->toBe([960, 540]);
+
+    config(['accesopro.video_scale' => 0.33]);
+    [$w, $h] = App\Services\Video\VideoFormat::dimensions('9x16');
+    expect($w % 2)->toBe(0)->and($h % 2)->toBe(0);
+
+    config(['accesopro.video_scale' => 3]); // fuera de rango: se ignora
+    expect(App\Services\Video\VideoFormat::dimensions('9x16'))->toBe([1080, 1920]);
+});

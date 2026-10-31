@@ -292,3 +292,16 @@ En el flujo normal esto casi nunca ocurre, porque `RunSourcePipeline` hace todos
 una pieza seguidos en el mismo contenedor. Solo pasa si un trabajo falla a mitad y se
 redespliega antes de relanzarlo. La solución definitiva para producción es guardar los
 intermedios en un bucket (regla 9 de CLAUDE.md), que queda pendiente.
+
+**D34 · Render en menor resolución y desbloqueo de trabajos tras quedarse sin memoria.**
+Con FFmpeg ya correcto (D32), el render en Cloud agotó los 512 MiB del contenedor, que
+comparten la web, el worker y FFmpeg, y Cloud lo reinició.
+- `VIDEO_SCALE` (`App\Services\Video\VideoFormat`) reduce la resolución de salida. Con 0.5
+  sale 540×960 / 960×540: ¼ de los píxeles y mucha menos memoria. Textos, subtítulos y logo
+  son proporcionales al ancho, así que la composición no cambia. En local sigue a 1 (1080p).
+  Es una concesión de la prueba en Cloud Starter; la entrega final usaría 1080p con 1–2 GiB.
+- `accesopro:reset-runs`: cuando el sistema mata el proceso por falta de memoria, el trabajo
+  no pasa por `failed()`. La fuente se queda en "procesando" y el bloqueo de `ShouldBeUnique`
+  sigue tomado, así que el botón "Generar" no hace nada hasta que la cola da el trabajo por
+  perdido (`DB_QUEUE_RETRY_AFTER`, ~1 h). El comando retira el trabajo de la cola, libera el
+  bloqueo y marca la fuente como "error" para poder relanzarla.

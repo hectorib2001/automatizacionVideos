@@ -109,6 +109,9 @@ return [
     'ffmpeg_threads' => env('FFMPEG_THREADS'),   // p. ej. 1: mucha menos memoria
     'ffmpeg_preset' => env('FFMPEG_PRESET'),     // p. ej. veryfast: menos memoria y CPU
     'ffmpeg_timeout' => (int) env('FFMPEG_TIMEOUT', 900), // segundos por render
+    // Escala de la resolución de salida (1 = 1080×1920 / 1920×1080). 0.5 = 540×960, para
+    // que el render quepa en 512 MiB (D34). Valores fuera de (0, 1] se ignoran.
+    'video_scale' => (float) env('VIDEO_SCALE', 1.0),
 
     // drive | youtube
     'publish_target' => env('PUBLISH_TARGET', 'drive'),

@@ -6,6 +6,7 @@ use App\Models\Piece;
 use App\Models\Render;
 use App\Services\Video\FfmpegRenderer;
 use App\Services\Video\SubtitleBuilder;
+use App\Services\Video\VideoFormat;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -24,12 +25,6 @@ final class CutAndRender implements ShouldQueue, ShouldBeUnique
 
     public int $tries = 3;
 
-    /** @var array<string, array{0: int, 1: int}> */
-    private const FORMATS = [
-        '9x16' => [1080, 1920],
-        '16x9' => [1920, 1080],
-    ];
-
     public function __construct(public readonly Piece $piece) {}
 
     public function uniqueId(): string
@@ -39,7 +34,7 @@ final class CutAndRender implements ShouldQueue, ShouldBeUnique
 
     public function handle(SubtitleBuilder $subtitleBuilder, FfmpegRenderer $ffmpeg): void
     {
-        $pending = collect(self::FORMATS)->keys()
+        $pending = collect(VideoFormat::names())
             ->reject(fn (string $format) => $this->piece->isPublished() || $this->piece->hasRenderFile($format)); // D33
 
         if ($pending->isEmpty()) {
@@ -70,7 +65,7 @@ final class CutAndRender implements ShouldQueue, ShouldBeUnique
         File::ensureDirectoryExists($dir);
 
         foreach ($pending as $format) {
-            [$width, $height] = self::FORMATS[$format];
+            [$width, $height] = VideoFormat::dimensions($format);
 
             $ass = "{$dir}/subs_{$format}.ass";
             file_put_contents($ass, $subtitleBuilder->toAss($cues, $width, $height));

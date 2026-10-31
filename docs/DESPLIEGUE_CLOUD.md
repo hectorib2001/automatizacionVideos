@@ -51,6 +51,8 @@ Plan Starter (5 $ de crédito, disco efímero, scale-to-zero). Ver D7, D9, D28 y
 - [ ] Variables: `FFMPEG_BIN=bin/ffmpeg`, `FFPROBE_BIN=bin/ffprobe`, `YT_DLP_BIN=bin/yt-dlp`
       (rutas relativas a la app) y, con 512 MiB, `FFMPEG_THREADS=1` y
       `FFMPEG_PRESET=veryfast` (D31).
+      Si aun así se queda sin memoria: `VIDEO_SCALE=0.5` (540×960, D34). Tras un reinicio por
+      memoria, desbloquear con `php artisan accesopro:reset-runs` antes de relanzar.
 - [ ] Memoria: renderizar 1080×1920 con x264 puede no caber en 512 MiB. Si el worker muere
       sin error (OOM), subir la memoria del worker a 1–2 GiB.
 
