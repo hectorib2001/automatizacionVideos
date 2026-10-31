@@ -109,8 +109,8 @@ final class FfmpegRenderer
             ? "split=2[bg][fg];".
               "[bg]scale={$width}:{$height}:force_original_aspect_ratio=increase,crop={$width}:{$height},gblur=sigma=20[bg2];".
               "[fg]scale={$width}:-2[fg2];".
-              '[bg2][fg2]overlay=(W-w)/2:(H-h)/2,'.'ass='.$this->escapePath($assPath)
-            : "scale={$width}:{$height}:force_original_aspect_ratio=decrease,pad={$width}:{$height}:(ow-iw)/2:(oh-ih)/2,".'ass='.$this->escapePath($assPath);
+              '[bg2][fg2]overlay=(W-w)/2:(H-h)/2,'.$this->assFilter($assPath)
+            : "scale={$width}:{$height}:force_original_aspect_ratio=decrease,pad={$width}:{$height}:(ow-iw)/2:(oh-ih)/2,".$this->assFilter($assPath);
 
         $result = Process::timeout((int) config('accesopro.ffmpeg_timeout'))->run([
             config('accesopro.ffmpeg'),
@@ -177,7 +177,7 @@ final class FfmpegRenderer
             }
         }
 
-        $filters[] = 'ass='.$this->escapePath($assPath);
+        $filters[] = $this->assFilter($assPath);
 
         return implode(',', $filters);
     }
@@ -216,6 +216,17 @@ final class FfmpegRenderer
         }
 
         return $options;
+    }
+
+    /**
+     * Subtítulos quemados con libass. `fontsdir` apunta a la carpeta de fuentes del repo para
+     * que "Inter" se encuentre aunque el sistema no tenga fuentes instaladas (servidores de
+     * Laravel Cloud): sin ella, libass puede no dibujar nada y FFmpeg no da error (D32).
+     */
+    private function assFilter(string $assPath): string
+    {
+        return 'ass='.$this->escapePath($assPath)
+            .':fontsdir='.$this->escapePath(dirname((string) config('accesopro.brand.font_path')));
     }
 
     private function escapePath(string $path): string

@@ -29,21 +29,25 @@ Plan Starter (5 $ de crédito, disco efímero, scale-to-zero). Ver D7, D9, D28 y
 - [ ] Activar la cola gestionada / worker con **timeout de 3600 s** (una clase de una hora
       tarda decenas de minutos). Sin worker, las fuentes se quedan "en cola".
 
-## 3. Binarios (FFmpeg, FFprobe, yt-dlp), ver D30
+## 3. Binarios (FFmpeg, FFprobe, yt-dlp), ver D30 y D32
 
 - [ ] Comandos de build (Settings → Deployments → Build commands), sustituyendo los actuales:
       ```bash
       composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
       mkdir -p bin
-      curl -fsSL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz -o /tmp/ffmpeg.tar.xz
+      curl -fsSL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.1-latest-linuxarm64-gpl-8.1.tar.xz -o /tmp/ffmpeg.tar.xz
       tar -xJf /tmp/ffmpeg.tar.xz -C /tmp
-      cp /tmp/ffmpeg-*-arm64-static/ffmpeg /tmp/ffmpeg-*-arm64-static/ffprobe bin/
+      cp /tmp/ffmpeg-n8.1-latest-linuxarm64-gpl-8.1/bin/ffmpeg /tmp/ffmpeg-n8.1-latest-linuxarm64-gpl-8.1/bin/ffprobe bin/
       curl -fsSL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_aarch64 -o bin/yt-dlp
       chmod +x bin/ffmpeg bin/ffprobe bin/yt-dlp
       ./bin/ffmpeg -version | head -1
+      test "$(./bin/ffmpeg -hide_banner -filters | grep -cE '^ [^ ]+ (drawtext|ass) ')" -eq 2 || { echo "ERROR: FFmpeg sin drawtext/ass"; exit 1; }
       ```
+      **No usar el build de johnvansickle** (7.0.2): está compilado sin `libharfbuzz` y, desde
+      FFmpeg 6.1, `drawtext` lo necesita → "No such filter: 'drawtext'" (D32). La última línea
+      hace fallar el build si vuelve a pasar con cualquier otro binario.
       Son binarios **arm64** porque el build de Cloud es `linux/arm64`. Si cambia a x86_64,
-      usar `ffmpeg-release-amd64-static.tar.xz` y `yt-dlp_linux`.
+      usar `...-linux64-gpl-8.1.tar.xz` y `yt-dlp_linux`.
 - [ ] Variables: `FFMPEG_BIN=bin/ffmpeg`, `FFPROBE_BIN=bin/ffprobe`, `YT_DLP_BIN=bin/yt-dlp`
       (rutas relativas a la app) y, con 512 MiB, `FFMPEG_THREADS=1` y
       `FFMPEG_PRESET=veryfast` (D31).

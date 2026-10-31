@@ -246,7 +246,7 @@ son máquinas distintas. Por eso:
 **D30 · FFmpeg y yt-dlp en Laravel Cloud: binarios estáticos descargados en el build.**
 Cloud no trae FFmpeg ni yt-dlp, y el disco de ejecución es efímero. Lo que se genera en el
 build sí queda dentro de la imagen desplegada. Los comandos de build descargan:
-- FFmpeg y FFprobe estáticos de johnvansickle.com, variante **arm64**, porque el build de
+- FFmpeg y FFprobe estáticos (johnvansickle.com al principio, sustituido por BtbN en D32), variante **arm64**, porque el build de
   Cloud corre en `linux/arm64`. Estas builds incluyen `libass` y `libfreetype`, que hacen
   falta para los subtítulos y `drawtext` (D18).
 - El binario independiente de yt-dlp (`yt-dlp_linux_aarch64`), que no necesita Python.
@@ -266,3 +266,15 @@ quepa en memoria, x264 admite `FFMPEG_THREADS` (con `rc-lookahead=10`) y `FFMPEG
 Si no se configuran, no se añade nada y el render local no cambia. El timeout de render pasa
 de 180 s fijos a `FFMPEG_TIMEOUT`, 900 s por defecto, porque con 1 vCPU un vídeo de 50 s
 tarda bastante más que en local.
+
+**D32 · FFmpeg de BtbN en lugar de johnvansickle; fuentes de los subtítulos explícitas.** El
+primer render en Cloud falló con `No such filter: 'drawtext'`. Desde FFmpeg 6.1, `drawtext`
+necesita `libfreetype` **y** `libharfbuzz`, y el build estático de johnvansickle (7.0.2)
+no trae harfbuzz. Se cambia al build GPL arm64 de BtbN (n8.1), cuyos scripts de compilación
+activan harfbuzz, libass, freetype y fontconfig. Para que un FFmpeg incompleto no vuelva a
+pasar desapercibido:
+- el build de Cloud falla si el binario no tiene `drawtext` y `ass`;
+- `accesopro:check` comprueba ambos filtros, no solo que FFmpeg arranque.
+Además, el filtro `ass` recibe `fontsdir` con la carpeta de fuentes del repo. Un servidor
+sin fuentes instaladas no encontraría "Inter", y libass no dibujaría los subtítulos sin que
+FFmpeg dé error.

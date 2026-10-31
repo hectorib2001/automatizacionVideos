@@ -20,7 +20,21 @@ class CheckCommand extends Command
 
         $results[] = $this->step('FFmpeg', function () {
             $r = Process::run([config('accesopro.ffmpeg'), '-version'])->throw();
-            return strtok($r->output(), "\n");
+            $version = strtok($r->output(), "\n");
+
+            // drawtext (texto de escenas, necesita libfreetype + libharfbuzz) y ass (subtítulos,
+            // libass) son imprescindibles: un FFmpeg sin ellos arranca bien pero no renderiza (D32).
+            $filters = Process::run([config('accesopro.ffmpeg'), '-hide_banner', '-filters'])->throw()->output();
+            $missing = array_values(array_filter(
+                ['drawtext', 'ass'],
+                fn (string $f) => preg_match('/^\s*\S+\s+'.$f.'\s/m', $filters) !== 1,
+            ));
+
+            if ($missing !== []) {
+                throw new \RuntimeException("{$version} — faltan filtros: ".implode(', ', $missing).' (¿compilado sin libharfbuzz/libass?)');
+            }
+
+            return "{$version} (drawtext y ass disponibles)";
         });
 
         foreach (['generator', 'reviewer'] as $role) {
