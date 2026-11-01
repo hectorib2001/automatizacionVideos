@@ -305,3 +305,28 @@ comparten la web, el worker y FFmpeg, y Cloud lo reinició.
   sigue tomado, así que el botón "Generar" no hace nada hasta que la cola da el trabajo por
   perdido (`DB_QUEUE_RETRY_AFTER`, ~1 h). El comando retira el trabajo de la cola, libera el
   bloqueo y marca la fuente como "error" para poder relanzarla.
+
+**D35 · YouTube: subida a petición desde la tabla de control, con su propio token.**
+- *Botón por pieza, no subida automática.* La publicación automática sigue en Drive
+  (`PUBLISH_TARGET=drive`); "Subir a YouTube" encola `PublishToYouTube` para una pieza
+  renderizada o publicada. Así se controla qué se sube y cuánta cuota se gasta. Con
+  `PUBLISH_TARGET=youtube` el job `Publish` del pipeline usa `YouTubePublisher` y la
+  subida pasa a ser automática, sin tocar el pipeline (regla 7).
+- *Token separado del de Drive.* Conectar YouTube pide `youtube.upload` +
+  `youtube.readonly` (para mostrar el canal) y guarda el refresh token cifrado en la tabla
+  `app_settings`, no en el `.env`: en Cloud el `.env` no se edita desde la app y el disco es
+  efímero. Reutiliza el cliente OAuth de Drive salvo que se definan `YOUTUBE_CLIENT_*`.
+  `YOUTUBE_REFRESH_TOKEN` queda como alternativa manual.
+- *Cuota.* Cada `videos.insert` y `thumbnails.set` se apunta en `cost_events` con 0 € y sus
+  unidades (`unit_type=quota_units`). Antes de cada llamada se comprueba lo que queda desde
+  la medianoche del Pacífico. El coste de `videos.insert` es configurable
+  (`YOUTUBE_INSERT_QUOTA_COST`, 1.600 por defecto, el valor conservador).
+- *Idempotencia.* La fila de `publications` se guarda nada más subir cada formato, y un
+  formato ya publicado no se vuelve a subir. El job tiene un solo intento: reintentar a
+  ciegas una subida a medias podría duplicar el vídeo.
+- *Avisos que no bloquean.* Si YouTube fuerza el vídeo a privado (proyecto sin auditar, D6)
+  o rechaza la miniatura (canal sin verificar por teléfono), el vídeo cuenta como publicado
+  y el aviso se ve en la tabla.
+- *Disco efímero.* Si el render ya no está en disco, se descarga la copia de Drive.
+- *Contenido sintético.* Los vídeos de texto se declaran con `containsSyntheticMedia`
+  porque llevan voz clonada. Los clips de la clase no.

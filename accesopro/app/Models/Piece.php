@@ -109,6 +109,12 @@ class Piece extends Model
         return $path !== null && is_file($path);
     }
 
+    /** Solo se sube a YouTube una pieza aprobada por el revisor y ya montada. */
+    public function canPublishToYouTube(): bool
+    {
+        return in_array($this->status, [PieceStatus::Renderizada, PieceStatus::Publicada], true);
+    }
+
     /** Una pieza publicada ya no necesita sus archivos intermedios: nada se regenera. */
     public function isPublished(): bool
     {

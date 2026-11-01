@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\PieceStatus;
 use App\Models\Piece;
+use App\Services\Publishing\YouTube\YouTubeAuth;
+use App\Services\Publishing\YouTube\YouTubeQuota;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -15,10 +17,10 @@ use Illuminate\View\View;
  */
 final class ControlPanelController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, YouTubeAuth $youtube, YouTubeQuota $quota): View
     {
         $pieces = Piece::query()
-            ->with(['source', 'publications' => fn ($q) => $q->where('status', 'publicada')])
+            ->with(['source', 'publications'])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
             ->when($request->filled('kind'), fn ($q) => $q->where('kind', $request->string('kind')))
             ->latest('created_at')
@@ -33,6 +35,13 @@ final class ControlPanelController extends Controller
             'totalCost' => $totalCost,
             'selectedStatus' => $request->string('status')->toString(),
             'selectedKind' => $request->string('kind')->toString(),
+            'youtube' => [
+                'configured' => $youtube->isConfigured(),
+                'connected' => $youtube->isConnected(),
+                'channel' => $youtube->channelTitle(),
+                'quotaRemaining' => $quota->remaining(),
+                'quotaDaily' => (int) config('accesopro.youtube.daily_quota'),
+            ],
         ]);
     }
 }

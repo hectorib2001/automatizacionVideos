@@ -20,7 +20,7 @@ final class ControlTableExporter
     public function pieceHeaders(): array
     {
         return ['id', 'uid', 'titulo', 'tipo', 'estado', 'origen', 'codigo_origen', 'clip_inicio',
-            'clip_fin', 'intentos_revision', 'coste_eur', 'enlace_9x16', 'enlace_16x9',
+            'clip_fin', 'intentos_revision', 'coste_eur', 'enlace_9x16', 'enlace_16x9', 'youtube_9x16', 'youtube_16x9',
             'motivo_descarte', 'creada', 'actualizada'];
     }
 
@@ -46,8 +46,10 @@ final class ControlTableExporter
                 $this->time($piece->clip_end),
                 (string) $piece->reviews_count,
                 $this->decimal($piece->cost_eur, 5),
-                (string) $piece->publications->firstWhere('format', '9x16')?->url,
-                (string) $piece->publications->firstWhere('format', '16x9')?->url,
+                (string) $this->url($piece, 'drive', '9x16'),
+                (string) $this->url($piece, 'drive', '16x9'),
+                (string) $this->url($piece, 'youtube', '9x16'),
+                (string) $this->url($piece, 'youtube', '16x9'),
                 (string) $piece->discard_reason,
                 (string) $piece->created_at?->toDateTimeString(),
                 (string) $piece->updated_at?->toDateTimeString(),
@@ -118,6 +120,12 @@ final class ControlTableExporter
     private function decimal(?float $value, int $decimals): string
     {
         return number_format((float) $value, $decimals, ',', '');
+    }
+
+    private function url(Piece $piece, string $target, string $format): ?string
+    {
+        return $piece->publications
+            ->first(fn ($p) => $p->target === $target && $p->format === $format)?->url;
     }
 
     private function time(?float $seconds): string

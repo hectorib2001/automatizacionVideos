@@ -2,6 +2,13 @@
 
 @section('title', 'Tabla de control')
 
+@section('head-extra')
+    @if ($pieces->contains(fn ($p) => $p->publications->contains(fn ($pub) => $pub->target === 'youtube' && $pub->status === 'pendiente')))
+        {{-- Mientras haya una subida a YouTube en curso, la tabla se refresca sola. --}}
+        <meta http-equiv="refresh" content="15">
+    @endif
+@endsection
+
 @section('content')
     <style>
         .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
@@ -25,6 +32,18 @@
         .exports { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; font-size: 13px; color: #52606A; }
         .exports a { padding: 6px 12px; border: 1px solid #D7DCE1; border-radius: 6px; text-decoration: none; color: #25394F; font-weight: 600; background: #fff; }
         .exports a:hover { background: #F4F6F8; }
+        .flash { background: #DDF2E8; color: #1D7A4C; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; font-weight: 600; }
+        .errors { background: #FDECEC; color: #B3261E; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
+        .yt-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; font-size: 13px; color: #52606A; background: #fff; border: 1px solid #E4E8EC; border-radius: 8px; padding: 10px 14px; }
+        .yt-bar strong { color: #25394F; }
+        .yt-bar form { margin: 0; }
+        .yt-btn { display: inline-block; background: #C4302B; color: #fff; border: 0; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; text-decoration: none; white-space: nowrap; }
+        .yt-btn:disabled { background: #B9C2CA; cursor: not-allowed; }
+        .yt-link-btn { background: none; border: 0; color: #67717E; text-decoration: underline; cursor: pointer; font-size: 12px; padding: 0; }
+        td.yt { min-width: 130px; }
+        td.yt form { margin: 0; }
+        td.yt small { display: block; margin-top: 4px; color: #8A5A0B; max-width: 220px; overflow-wrap: anywhere; }
+        td.yt small.err { color: #B3261E; }
         td.reason { max-width: 280px; overflow-wrap: anywhere; color: #52606A; }
     </style>
 
@@ -38,6 +57,30 @@
         <a href="{{ route('control.export.pieces') }}">Tabla de control</a>
         <a href="{{ route('control.export.reviews') }}">Revisiones</a>
         <a href="{{ route('control.export.rejections') }}">Rechazos</a>
+    </div>
+
+    @if (session('status'))
+        <div class="flash">{{ session('status') }}</div>
+    @endif
+    @if ($errors->any())
+        <div class="errors">{{ $errors->first() }}</div>
+    @endif
+
+    <div class="yt-bar">
+        @if ($youtube['connected'])
+            <span>YouTube: <strong>{{ $youtube['channel'] ?? 'conectado (token del .env)' }}</strong></span>
+            <span>Cuota hoy: {{ $youtube['quotaRemaining'] }} / {{ $youtube['quotaDaily'] }} unidades</span>
+            <a class="yt-link-btn" href="{{ route('youtube.connect') }}">Cambiar de canal</a>
+            <form method="POST" action="{{ route('youtube.disconnect') }}">
+                @csrf
+                <button type="submit" class="yt-link-btn">Desconectar</button>
+            </form>
+        @elseif ($youtube['configured'])
+            <span>YouTube no está conectado: conecta el canal de prueba para poder subir vídeos (se suben como <strong>no listados</strong>).</span>
+            <a class="yt-btn" href="{{ route('youtube.connect') }}">Conectar YouTube</a>
+        @else
+            <span>YouTube no configurado: faltan las credenciales OAuth de Google en el <code>.env</code>.</span>
+        @endif
     </div>
 
     <form method="GET" class="filters">
@@ -65,6 +108,7 @@
                     <th>Coste (€)</th>
                     <th>9:16</th>
                     <th>16:9</th>
+                    <th>YouTube</th>
                     <th>Motivo de descarte</th>
                 </tr>
             </thead>
@@ -77,8 +121,16 @@
                             \App\Enums\PieceStatus::Rechazada, \App\Enums\PieceStatus::Corregida => 'warning',
                             \App\Enums\PieceStatus::Descartada => 'danger',
                         };
-                        $url9x16 = $piece->publications->firstWhere('format', '9x16')?->url;
-                        $url16x9 = $piece->publications->firstWhere('format', '16x9')?->url;
+                        $drive = $piece->publications->where('target', 'drive')->where('status', 'publicada');
+                        $url9x16 = $drive->firstWhere('format', '9x16')?->url;
+                        $url16x9 = $drive->firstWhere('format', '16x9')?->url;
+                        $yt = $piece->publications->where('target', 'youtube');
+                        $ytDone = $yt->where('status', 'publicada');
+                        $ytPending = $yt->contains('status', 'pendiente');
+                        $ytFailed = $yt->where('status', 'error')->sortByDesc('format');
+                        $ytError = $ytFailed->isNotEmpty();
+                        // Avisos no bloqueantes (vídeo forzado a privado, miniatura no aplicada).
+                        $ytWarned = $ytDone->filter(fn ($pub) => filled($pub->error))->sortByDesc('format');
                     @endphp
                     <tr>
                         <td>{{ $piece->idea_title }}</td>
@@ -94,6 +146,46 @@
                         <td>{{ number_format($piece->cost_eur, 5) }}</td>
                         <td>@if ($url9x16)<a href="{{ $url9x16 }}" target="_blank" rel="noopener">Ver</a>@else<span class="muted">—</span>@endif</td>
                         <td>@if ($url16x9)<a href="{{ $url16x9 }}" target="_blank" rel="noopener">Ver</a>@else<span class="muted">—</span>@endif</td>
+                        <td class="yt">
+                            @foreach ($ytDone->sortByDesc('format') as $pub)
+                                <a href="{{ $pub->url }}" target="_blank" rel="noopener">{{ $pub->format === '9x16' ? 'Short' : '16:9' }}</a>@if (! $loop->last) · @endif
+                            @endforeach
+                            @if ($ytPending)
+                                <span class="muted">Subiendo…</span>
+                            @elseif ($piece->canPublishToYouTube() && $ytDone->count() < count(\App\Models\Piece::VIDEO_FORMATS))
+                                <form method="POST" action="{{ route('youtube.publish', $piece) }}">
+                                    @csrf
+                                    <button type="submit" class="yt-btn" @disabled(! $youtube['connected'])
+                                        @if (! $youtube['connected']) title="Conecta primero el canal de YouTube" @endif>
+                                        {{ $ytError ? 'Reintentar' : 'Subir a YouTube' }}
+                                    </button>
+                                </form>
+                            @elseif ($ytDone->isEmpty())
+                                <span class="muted">—</span>
+                            @endif
+                            @unless ($ytPending)
+                                @foreach ($ytFailed as $pub)
+                                    @php $label = $pub->format === '9x16' ? '9:16' : '16:9'; @endphp
+                                    <small class="err">
+                                        Error {{ $label }}: {{ \Illuminate\Support\Str::limit($pub->errorSummary(), 90) }}
+                                        <button type="button" class="detail-more" data-detail-code
+                                            data-detail-title="Error al subir a YouTube ({{ $label }}) · {{ $piece->idea_title }}"
+                                            data-detail="{{ $pub->errorDetail() }}">Ver detalle</button>
+                                    </small>
+                                @endforeach
+                            @endunless
+                            @foreach ($ytWarned as $pub)
+                                @php $label = $pub->format === '9x16' ? '9:16' : '16:9'; @endphp
+                                <small>
+                                    Aviso {{ $label }}: {{ \Illuminate\Support\Str::limit($pub->errorSummary(), 90) }}
+                                    @if (mb_strlen($pub->errorSummary()) > 90)
+                                        <button type="button" class="detail-more"
+                                            data-detail-title="Aviso de YouTube ({{ $label }}) · {{ $piece->idea_title }}"
+                                            data-detail="{{ $pub->errorDetail() }}">Ver detalle</button>
+                                    @endif
+                                </small>
+                            @endforeach
+                        </td>
                         <td class="reason">
                             @if ($piece->discard_reason)
                                 {{ \Illuminate\Support\Str::limit($piece->discard_reason, 90) }}
@@ -106,7 +198,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" class="muted">No hay piezas todavía.</td></tr>
+                    <tr><td colspan="9" class="muted">No hay piezas todavía.</td></tr>
                 @endforelse
             </tbody>
         </table>

@@ -22,6 +22,10 @@ Plan Starter (5 $ de crédito, disco efímero, scale-to-zero). Ver D7, D9, D28 y
       claves de Anthropic, ElevenLabs (+ `ELEVENLABS_VOICE_ID`), Groq y Google Drive
       (`GOOGLE_DRIVE_CLIENT_ID/SECRET/REFRESH_TOKEN/ROOT`), `PUBLISH_TARGET=drive`,
       `DAILY_BUDGET_EUR`, `DB_QUEUE_RETRY_AFTER=3700`.
+- [ ] YouTube (D35): en Google Cloud Console, activar **YouTube Data API v3** y añadir
+      `https://<tu-app>.laravel.cloud/youtube/callback` como URI de redirección del cliente
+      OAuth. Tras desplegar, pulsar **"Conectar YouTube"** en la tabla de control (el token
+      se guarda en la base de datos, no hace falta tocar variables).
 - [ ] Comando de despliegue: `php artisan migrate --force`.
 
 ## 2. Cola (necesaria para el botón "Generar")

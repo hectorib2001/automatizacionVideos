@@ -230,7 +230,15 @@ de la base de datos; se exportarán a CSV en la Fase 6.)
       con `composer run dev` (arranca la web y el worker a la vez).
 
 ## Fase 5 – Calidad final, YouTube y Nivel 2 barato
-- [ ] `YouTubePublisher` (no listado, miniatura, control de cuota); si queda en privado, plan B documentado
+- [x] `YouTubePublisher` (D35): sube los dos formatos como **no listados** con título,
+      descripción, etiquetas y miniatura (solo 16:9; los Shorts no la admiten por API).
+      Botón **"Conectar YouTube"** (OAuth, token cifrado en `app_settings`) y botón
+      **"Subir a YouTube"** por pieza en la tabla de control (job `PublishToYouTube`, por la
+      cola). Control de cuota diaria (`YouTubeQuota`, unidades en `cost_events` a 0 €).
+      Idempotente por formato. Si YouTube fuerza el vídeo a privado (proyecto sin auditar),
+      queda publicado con un aviso visible en la tabla. 9 tests Pest con la API simulada.
+- [ ] Subida real al canal de prueba: registrar `{APP_URL}/youtube/callback` como URI de
+      redirección, activar YouTube Data API v3, conectar y subir ≥3 vídeos y ≥3 clips.
 - [ ] Aprobación humana activable (`REQUIRE_HUMAN_APPROVAL`) con botones en Filament
 - [ ] A/B: dos ganchos + juez con lógica explicada
 - [ ] Límite de gasto diario visible en el panel

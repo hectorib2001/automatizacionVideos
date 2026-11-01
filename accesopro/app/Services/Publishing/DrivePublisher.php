@@ -54,7 +54,8 @@ final class DrivePublisher implements Publisher
         return $results;
     }
 
-    private function remotePath(Piece $piece, string $format): string
+    /** Ruta del vídeo en Drive (también la usa YouTubePublisher para recuperar el archivo, D35). */
+    public function remotePath(Piece $piece, string $format): string
     {
         $root = config('accesopro.drive_root');
 

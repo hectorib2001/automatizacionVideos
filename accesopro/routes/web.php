@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ControlExportController;
 use App\Http\Controllers\ControlPanelController;
 use App\Http\Controllers\SourcesController;
+use App\Http\Controllers\YouTubeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('control.index'));
@@ -19,6 +20,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/panel/export/tabla-control.csv', [ControlExportController::class, 'pieces'])->name('control.export.pieces');
     Route::get('/panel/export/revisiones.csv', [ControlExportController::class, 'reviews'])->name('control.export.reviews');
     Route::get('/panel/export/rechazos.csv', [ControlExportController::class, 'rejections'])->name('control.export.rejections');
+
+    Route::get('/youtube/conectar', [YouTubeController::class, 'connect'])->name('youtube.connect');
+    Route::get('/youtube/callback', [YouTubeController::class, 'callback'])->name('youtube.callback');
+    Route::post('/youtube/desconectar', [YouTubeController::class, 'disconnect'])->name('youtube.disconnect');
+    Route::post('/panel/piezas/{piece}/youtube', [YouTubeController::class, 'publish'])->name('youtube.publish');
 
     Route::get('/fuentes', [SourcesController::class, 'index'])->name('sources.index');
     Route::post('/fuentes/documentos', [SourcesController::class, 'storeDocument'])->name('sources.documents.store');

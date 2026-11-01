@@ -116,4 +116,21 @@ return [
     // drive | youtube
     'publish_target' => env('PUBLISH_TARGET', 'drive'),
     'drive_root' => env('GOOGLE_DRIVE_ROOT', 'AccesoPro'),
+
+    // YouTube (botón "Subir a YouTube" de la tabla de control y PUBLISH_TARGET=youtube, D35).
+    // Por defecto reutiliza el cliente OAuth de Drive; el refresh token con el scope de
+    // YouTube se obtiene con "Conectar YouTube" en el panel (o YOUTUBE_REFRESH_TOKEN).
+    'youtube' => [
+        'client_id' => env('YOUTUBE_CLIENT_ID', env('GOOGLE_DRIVE_CLIENT_ID')),
+        'client_secret' => env('YOUTUBE_CLIENT_SECRET', env('GOOGLE_DRIVE_CLIENT_SECRET')),
+        'refresh_token' => env('YOUTUBE_REFRESH_TOKEN'),
+        'privacy' => env('YOUTUBE_PRIVACY', 'unlisted'), // el enunciado exige no listados
+        'category_id' => env('YOUTUBE_CATEGORY_ID', '27'), // 27 = Educación
+        // Cuota de la YouTube Data API: 10.000 unidades/día por defecto. El coste de
+        // videos.insert ha cambiado con el tiempo: 1.600 es el valor conservador; ajústalo
+        // al que muestre Google Cloud Console. Se reinicia a medianoche hora del Pacífico.
+        'daily_quota' => (int) env('YOUTUBE_DAILY_QUOTA', 10000),
+        'insert_cost' => (int) env('YOUTUBE_INSERT_QUOTA_COST', 1600),
+        'thumbnail_cost' => (int) env('YOUTUBE_THUMBNAIL_QUOTA_COST', 50),
+    ],
 ];
